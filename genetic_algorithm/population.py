@@ -33,8 +33,10 @@ class Population(List[Individual]):
     def generate_genes(self):
         genes = []
         max_value = 100
-        for _ in range(self.num_of_genes):
+        for _ in range(self.num_of_genes - 1):
             new_gene = self.generate_random_gene(max_value)
             genes.append(new_gene)
             max_value -= new_gene
+        # Последний ген не случайный, поскольку в сумме должно быть 100%
+        genes.append(max_value)
         return genes
