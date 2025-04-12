@@ -4,8 +4,8 @@ from typing import List
 
 class Individual:
     def __init__(self, genes: list, profitability: list):
-        self.encoded_gene = genes
-        self.decoded_gene: str = self.code_genes(genes)
+        self.decoded_gene = genes
+        self.coded_gene: str = self.code_genes(genes)
         self.fitness = self.fitness(profitability)
         self.roulette_point: int
 
