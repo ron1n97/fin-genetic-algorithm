@@ -15,7 +15,7 @@ class Individual:
 
     def fitness(self, profitability):
         fitness = 0
-        for gene, profit in zip(self.encoded_gene, profitability):
+        for gene, profit in zip(self.decoded_gene, profitability):
             fitness += gene * profit
         return fitness
 

@@ -11,5 +11,4 @@ if __name__ == "__main__":
     moex_data = [0.3, 0.2, 0.6]
     num_of_genes = len(tickers)
     generic_algorithm = GeneticAlgorithm(num_of_genes, moex_data)
-    print("Стартовая популяция:\n")
-    print(generic_algorithm.population.population_list)
+    generic_algorithm.run()
