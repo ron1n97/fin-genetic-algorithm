@@ -3,29 +3,35 @@ from typing import List
 
 
 class Individual:
-    def __init__(self, genes: list):
-        self.decoded_gene = genes
-        self.encoded_gene: str = self.encode_genes(genes)
+    def __init__(self, genes: list, profitability: list):
+        self.encoded_gene = genes
+        self.decoded_gene: str = self.code_genes(genes)
+        self.fitness = self.fitness(profitability)
+        self.roulette_point: int
 
-    def encode_genes(self, genes: list):
+    def code_genes(self, genes: list):
         # TODO: Надо уйти от семерки и как-то поэлегантнее написать
         return "".join(f"{bin(g)[2:]:0>7}" for g in genes)
 
+    def fitness(self, profitability):
+        fitness = 0
+        for gene, profit in zip(self.encoded_gene, profitability):
+            fitness += gene * profit
+        return fitness
+
 
 class Population(List[Individual]):
-    def __init__(self, num_of_genes: int, population_size: int):
+    def __init__(self, profitability: list):
         super().__init__()
-        self.num_of_genes = num_of_genes
-        self.population_size = population_size
-        self.individuals = self.generate_start_population(population_size)
+        self.num_of_genes = len(profitability)
+        self.profitability = profitability
+        self.population_list = []
 
     def generate_start_population(self, population_size: int):
-        population = []
         for _ in range(population_size):
             genes = self.generate_genes()
-            individual = Individual(genes)
-            population.append(individual)
-        return population
+            individual = Individual(genes, self.profitability)
+            self.population_list.append(individual)
 
     def generate_random_gene(self, max_value: int):
         return randint(0, max_value)
