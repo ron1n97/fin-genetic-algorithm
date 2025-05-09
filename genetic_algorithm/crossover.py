@@ -11,7 +11,7 @@ class Crossover:
 
     def conduct_crossover(self, population_size):
         # FIXME: Поддержать работу с популяциями из нечетного количества
-        for _ in range(population_size // 2):
+        while len(self.population.population_list) < population_size:
             offspring_1, offspring_2 = self._singe_point_crossover()
             self.population.population_list.append(offspring_1)
             if population_size == len(self.population.population_list):
@@ -45,9 +45,19 @@ class Crossover:
 
     def __normalize_and_decode_gene(self, coded_gene: str):
         # FIXME: использвовать
+        coded_gene = self.__mutate_gene(coded_gene)
         decoded_gene = self.__decode_gene(coded_gene)
         normalized_gene = self.__normalize_gene(decoded_gene)
         return normalized_gene
+
+    @staticmethod
+    def __mutate_gene(coded_gene: str):
+        mutated_coded_gene = ""
+        for num in coded_gene:
+            if random.random() < 0.0005:
+                num = str(random.randint(0, 1))
+            mutated_coded_gene += num
+        return mutated_coded_gene
 
     @staticmethod
     def __decode_gene(coded_gene: str):

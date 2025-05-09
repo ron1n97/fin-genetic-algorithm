@@ -1,3 +1,4 @@
+from copy import deepcopy
 from genetic_algorithm.crossover import Crossover
 from genetic_algorithm.population import Population
 from genetic_algorithm.selection import Selection
@@ -6,42 +7,77 @@ from genetic_algorithm.selection import Selection
 class GeneticAlgorithm:
 
     def __init__(
-        self, num_of_genes: int, profitability: list, population_size: int = 100
+        self,
+        profitability: list,
+        population_size: int = 100,
+        parent_pool_size: int = 30,
+        plateau_generations: int = 20,
     ):
         # FIXME: Сделать возможность задачи размера родительского пула извне
-        self.parent_pool_size = 33
+        self.plateau_generations = plateau_generations
         self.population_size = population_size
+        self.parent_pool_size = parent_pool_size
         self.population = Population(profitability)
+        self.parent_pool = Population(profitability)
         self.population.generate_start_population(population_size)
         self.best_portfolio = None
 
         self.max_fits = []
         self.avg_fits = []
 
+        self.current_iteration = 0
+        self.is_plateau = False
+
     def run(self):
         has_increase = True
         while has_increase:
-            self.selection = Selection(self.population)
-            parent_pool = self.selection.select_parent_pool(self.parent_pool_size)
-            print("Длина родительского пула - ", len(parent_pool.population_list))
-            crossover = Crossover(parent_pool)
-            self.population = crossover.conduct_crossover(self.population_size)
-            max_fit, avg_fit = self.get_max_and_average_fitness()
-            print(
-                "Максимальная приспособленность новой популяции -",
-                max_fit,
-                " средняя приспособленность - ",
-                avg_fit,
-            )
-            has_increase = self.estimate_increase(max_fit, avg_fit)
-            self.max_fits.append(max_fit)
-            self.avg_fits.append(avg_fit)
+            self.run_iteration()
+
+            if self.is_plateau:
+                break
+
         print(
             "Итоговый лучший результат - ",
-            self.max_fits[-1],
+            max(self.max_fits),
             " Параметры портфеля - ",
             self.best_portfolio,
         )
+
+    def run_iteration(self):
+        print("Номер итерации - ", self.current_iteration)
+        self.current_iteration += 1
+
+        self.selection = Selection(self.population)
+
+        self.parent_pool = deepcopy(
+            self.selection.select_parent_pool(self.parent_pool_size)
+        )
+
+        print("Длина родительского пула - ", len(self.parent_pool.population_list))
+        crossover = Crossover(self.parent_pool)
+        self.population = deepcopy(crossover.conduct_crossover(self.population_size))
+        print("Длина новой популяции - ", len(self.population.population_list))
+        max_fit, avg_fit = self.get_max_and_average_fitness()
+        print(
+            "Максимальная приспособленность новой популяции -",
+            max_fit,
+            ", средняя приспособленность - ",
+            avg_fit,
+        )
+        self.max_fits.append(max_fit)
+        self.avg_fits.append(avg_fit)
+
+        self.is_plateau = self.__check_plateau()
+
+    def __check_plateau(self):
+        current_max = self.avg_fits[-1]
+        if len(self.avg_fits) < self.plateau_generations:
+            return False
+
+        history = self.avg_fits[-self.plateau_generations :]
+        previous_max = max(history)
+
+        return current_max <= previous_max
 
     def get_max_and_average_fitness(self):
         sum_fitness = 0
