@@ -6,10 +6,10 @@ from genetic_algorithm.selection import Selection
 class GeneticAlgorithm:
 
     def __init__(
-        self, num_of_genes: int, profitability: list, population_size: int = 30
+        self, num_of_genes: int, profitability: list, population_size: int = 100
     ):
         # FIXME: Сделать возможность задачи размера родительского пула извне
-        self.parent_pool_size = 10
+        self.parent_pool_size = 33
         self.population_size = population_size
         self.population = Population(profitability)
         self.population.generate_start_population(population_size)
@@ -55,7 +55,11 @@ class GeneticAlgorithm:
         return max_fitness, average_fitness
 
     def estimate_increase(self, max_fit, avg_fit):
-        if self.max_fits:
-            if abs(max_fit - self.max_fits[-1]) <= 0.1:
+        if len(self.avg_fits) == 3:
+            if (
+                avg_fit - self.avg_fits[-1] <= 0.4
+                and avg_fit - self.avg_fits[-2] <= 0.04
+                and avg_fit - self.avg_fits[-3] <= 0.04
+            ):
                 return False
         return True
