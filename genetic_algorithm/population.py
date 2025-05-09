@@ -5,19 +5,41 @@ from typing import List
 class Individual:
     def __init__(self, genes: list, profitability: list):
         self.decoded_gene = genes
+        self.profitability = profitability
         self.coded_gene: str = self.code_genes(genes)
-        self.fitness = self.fitness(profitability)
+        self.fitness = self.calculate_fitness()
         self.roulette_point: int
 
     def code_genes(self, genes: list):
-        # TODO: Надо уйти от семерки и как-то поэлегантнее написать
         return "".join(f"{bin(g)[2:]:0>7}" for g in genes)
 
-    def fitness(self, profitability):
+    def decode_genes(self, coded_gene: str) -> list:
+        if len(coded_gene) % 7 != 0:
+            raise ValueError("Некорректная хромосома: длина должна быть кратна 7")
+        genes = [int(coded_gene[i : i + 7], 2) for i in range(0, len(coded_gene), 7)]
+        # Нормализуем ген
+        normalized_gene = self.__normalize_gene(genes)
+        self.coded_gene = self.code_genes(normalized_gene)
+        return normalized_gene
+
+    def calculate_fitness(self):
         fitness = 0
-        for gene, profit in zip(self.decoded_gene, profitability):
+        for gene, profit in zip(self.decoded_gene, self.profitability):
             fitness += gene * profit
         return fitness
+
+    @staticmethod
+    def __normalize_gene(genes: List[int]):
+        gene_sum_value = sum(genes)
+        normalized_genes = []
+        # перебираем до предпоследнего
+        for i in range(len(genes) - 1):
+            gene = round(genes[i] / gene_sum_value * 100)
+            normalized_genes.append(gene)
+        # Явно задаем последний ген,
+        # чтобы суммарное значение было 100%
+        normalized_genes.append(100 - sum(normalized_genes))
+        return normalized_genes
 
 
 class Population(List[Individual]):

@@ -13,7 +13,6 @@ class GeneticAlgorithm:
         parent_pool_size: int = 30,
         plateau_generations: int = 20,
     ):
-        # FIXME: Сделать возможность задачи размера родительского пула извне
         self.plateau_generations = plateau_generations
         self.population_size = population_size
         self.parent_pool_size = parent_pool_size
@@ -49,13 +48,11 @@ class GeneticAlgorithm:
 
         self.selection = Selection(self.population)
 
-        self.parent_pool = deepcopy(
-            self.selection.select_parent_pool(self.parent_pool_size)
-        )
+        self.parent_pool = self.selection.select_parent_pool(self.parent_pool_size)
 
         print("Длина родительского пула - ", len(self.parent_pool.population_list))
-        crossover = Crossover(self.parent_pool)
-        self.population = deepcopy(crossover.conduct_crossover(self.population_size))
+        crossover = Crossover(deepcopy(self.parent_pool))
+        self.population = crossover.conduct_crossover(self.population_size)
         print("Длина новой популяции - ", len(self.population.population_list))
         max_fit, avg_fit = self.get_max_and_average_fitness()
         print(
@@ -71,10 +68,10 @@ class GeneticAlgorithm:
 
     def __check_plateau(self):
         current_max = self.avg_fits[-1]
-        if len(self.avg_fits) < self.plateau_generations:
+        if len(self.avg_fits) <= self.plateau_generations:
             return False
 
-        history = self.avg_fits[-self.plateau_generations :]
+        history = self.avg_fits[: -self.plateau_generations]
         previous_max = max(history)
 
         return current_max <= previous_max

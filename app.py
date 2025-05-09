@@ -1,3 +1,4 @@
+import ast
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -25,7 +26,6 @@ def main():
         )
     )
 
-    # Секция параметров
     show_sidebar = True
     if show_sidebar:
         with st.sidebar:
@@ -75,24 +75,24 @@ def main():
                 value=12,
             )
 
-            st.session_state.auto_mode = st.checkbox("Автоматический режим")
+            if not st.session_state.ga or st.session_state.ga.is_plateau:
 
-            if st.button("Инициализировать"):
-                profit = [e1, e2, e3]
-                parent_pool_size = round(population_size * parent_pool_ratio)
-                st.session_state.ga = GeneticAlgorithm(
-                    profitability=profit,
-                    population_size=population_size,
-                    parent_pool_size=parent_pool_size,
-                    plateau_generations=plateau_generations,
-                )
-                show_sidebar = False
+                st.session_state.auto_mode = st.checkbox("Автоматический режим")
+                if st.button("Инициализировать"):
+                    profit = [e1, e2, e3]
+                    parent_pool_size = round(population_size * parent_pool_ratio)
+                    st.session_state.ga = GeneticAlgorithm(
+                        profitability=profit,
+                        population_size=population_size,
+                        parent_pool_size=parent_pool_size,
+                        plateau_generations=plateau_generations,
+                    )
+                    show_sidebar = False
 
-                if st.session_state.auto_mode:
-                    st.session_state.ga.run()
-                st.rerun()
+                    if st.session_state.auto_mode:
+                        st.session_state.ga.run()
+                    st.rerun()
 
-    # Управление выполнением
     col1, col2 = st.columns(2)
     if (
         not st.session_state.auto_mode
@@ -103,7 +103,6 @@ def main():
             if st.button("Следующее поколение"):
                 st.session_state.ga.run_iteration()
 
-    # Визуализация
     if st.session_state.ga:
         render_population()
         render_stats()
@@ -113,13 +112,69 @@ def main():
 def render_population():
     st.subheader("Текущая популяция")
     ga = st.session_state.ga
+
     df = pd.DataFrame(
         [
-            {"ID": idx, "Гены": ind.decoded_gene, "Фитнес": ind.fitness}
+            {
+                "ID": idx,
+                "Гены": str(ind.decoded_gene),
+                "Хромосома": ind.coded_gene,
+                "Фитнес": ind.fitness,
+            }
             for idx, ind in enumerate(ga.population.population_list)
         ]
     )
-    st.dataframe(df)
+
+    if "original_population_df" not in st.session_state:
+        st.session_state.original_population_df = df.copy()
+
+    edited_df = st.data_editor(
+        df,
+        key="population_table",
+        disabled=["ID", "Фитнес"],
+        column_config={
+            "Гены": {"help": "Редактируйте гены (например, [1, 2, 3])"},
+            "Хромосома": {"help": "Редактируйте строку хромосомы"},
+        },
+    )
+
+    if not edited_df.equals(st.session_state.original_population_df):
+        try:
+            for idx in edited_df.index:
+                edited_row = edited_df.iloc[idx]
+                original_row = st.session_state.original_population_df.iloc[idx]
+                individual = ga.population.population_list[idx]
+
+                genes_changed = edited_row["Гены"] != original_row["Гены"]
+                chromo_changed = edited_row["Хромосома"] != original_row["Хромосома"]
+
+                if genes_changed and chromo_changed:
+                    st.error(
+                        f"Особь {idx}: Изменены оба поля. Редактируйте только одно."
+                    )
+                    continue
+
+                if genes_changed:
+                    new_genes = ast.literal_eval(edited_row["Гены"])
+                    print(sum(new_genes))
+                    if sum(new_genes) != 100:
+                        raise Exception("Ген не нормализован")
+                    else:
+                        individual.decoded_gene = new_genes
+                        individual.coded_gene = individual.code_genes(new_genes)
+                        individual.fitness = individual.calculate_fitness()
+
+                elif chromo_changed:
+                    individual.coded_gene = edited_row["Хромосома"]
+                    individual.decoded_gene = individual.decode_genes(
+                        individual.coded_gene
+                    )
+                    individual.fitness = individual.calculate_fitness()
+
+            st.session_state.original_population_df = edited_df.copy()
+            st.rerun()
+        except Exception as e:
+            st.error(f"Ошибка обработки: {str(e)}")
 
 
 def render_stats():
@@ -146,7 +201,12 @@ def render_parent_pool():
         st.subheader("Родительский пул")
         df = pd.DataFrame(
             [
-                {"ID": idx, "Гены": ind.decoded_gene, "Фитнес": ind.fitness}
+                {
+                    "ID": idx,
+                    "Гены": ind.decoded_gene,
+                    "Хромосома": ind.coded_gene,
+                    "Фитнес": ind.fitness,
+                }
                 for idx, ind in enumerate(
                     st.session_state.ga.parent_pool.population_list
                 )

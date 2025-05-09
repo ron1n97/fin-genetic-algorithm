@@ -4,13 +4,11 @@ from genetic_algorithm.population import Individual, Population
 
 
 class Crossover:
-    def __init__(self, population: Population, crossover_points_count: int = 1):
+    def __init__(self, population: Population):
         self.population = population
-        # TODO: использовать кол-во точек кроссовера для их создания
         self.crossover_point = len(self.population.population_list[0].coded_gene) // 2
 
     def conduct_crossover(self, population_size):
-        # FIXME: Поддержать работу с популяциями из нечетного количества
         while len(self.population.population_list) < population_size:
             offspring_1, offspring_2 = self._singe_point_crossover()
             self.population.population_list.append(offspring_1)
@@ -44,7 +42,6 @@ class Crossover:
         return offspring_1, offspring_2
 
     def __normalize_and_decode_gene(self, coded_gene: str):
-        # FIXME: использвовать
         coded_gene = self.__mutate_gene(coded_gene)
         decoded_gene = self.__decode_gene(coded_gene)
         normalized_gene = self.__normalize_gene(decoded_gene)
