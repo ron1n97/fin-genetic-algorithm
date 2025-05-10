@@ -26,7 +26,7 @@ class Individual:
         fitness = 0
         for gene, profit in zip(self.decoded_gene, self.profitability):
             fitness += gene * profit
-        return fitness
+        return fitness / 100
 
     @staticmethod
     def __normalize_gene(genes: List[int]):

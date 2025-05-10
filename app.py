@@ -17,7 +17,10 @@ def main():
     st.title("Генетический алгоритм")
 
     if st.session_state.ga and st.session_state.ga.is_plateau:
-        st.header("Алгоритм достиг плато")
+        st.header(
+            "Алгоритм достиг плато. Лучший найденный портфель - "
+            + str(st.session_state.ga.best_portfolio),
+        )
 
     st.header(
         "Итерация № "
